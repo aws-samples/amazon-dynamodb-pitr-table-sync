@@ -1,0 +1,12 @@
+version = 0.1
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "amazon-dynamodb-pitr-table-sync"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-6lz0dad43sy2"
+s3_prefix = "dynamodb-pitr-table-sync"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_AUTO_EXPAND CAPABILITY_IAM"
+image_repositories = []
+parameter_overrides = "LambdaFunctionLogLevel=\"INFO\" EnableTagSettings=\"TRUE\" EnableKinesisSettings=\"TRUE\" EnableDynamoDBStreamSettings=\"TRUE\" EnableDynamoDBLambdaTrigger=\"TRUE\" EnableTTLSettings=\"TRUE\" EnablePITRSettings=\"TRUE\" EnableAutoScalingSettings=\"TRUE\""

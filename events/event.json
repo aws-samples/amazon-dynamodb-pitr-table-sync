@@ -1,0 +1,26 @@
+{
+    "Records": [{
+        "messageId": "c53fe60e-57e0-46a9-a6cd-b13d61ef84c5",
+        "receiptHandle": "AQEBW74KBxUFoqt99MFIqD1MRWCkX12dT9aPh+7/7CnoLDv57mn/+62wDWQPM2o/mrdxhlhjH77M/18ubldBSZuEMjTJ2pFxv9uFubLY0XlF2Lt23+A6cPZQYTy0vyHk5FaorpbzirGHOT5ilEY4eoVQwka3OV0Vby78Byulrvj5OteztXIGZyTm5pnlNKBLQ4oNvpr/EVdwSXkefRiP7b1BENRqEgm6MqnMLwNYqjAXrKtOkAA30jEKoAQm/c3dmvXVRX3rlXVM7Rvl4GZQFrj3W/PPdstZbqsI1yOHdfT8xDYs/u0rypnzPkAr1r+PbW8JtgbZ1FcSHPZwtdonfD2W+veAsBRDeP7GxSZAAGzP6rbqbqA4CWM3PB/8Evcx4rUNnl1UsPVNBquZgvCvre3+ew==",
+        "body": "{\"version\":\"0\",\"id\":\"20d8d4cb-7e6e-19d7-dc1e-3f30981124d7\",\"detail-type\":\"AWS API Call via CloudTrail\",\"source\":\"aws.dynamodb\",\"account\":\"123456789012\",\"time\":\"2022-07-21T19:02:56Z\",\"region\":\"us-east-1\",\"resources\":[],\"detail\":{\"eventVersion\":\"1.08\",\"userIdentity\":{\"type\":\"AssumedRole\",\"principalId\":\"AROAID32STDPBXLUODI4U:sample-federated-user\",\"arn\":\"arn:aws:sts::123456789012:assumed-role/sample-role/sample-federated-user\",\"accountId\":\"123456789012\",\"accessKeyId\":\"ASIAYVA662W2DGKGL6FM\",\"sessionContext\":{\"sessionIssuer\":{\"type\":\"Role\",\"principalId\":\"AROAID32STDPBXLUODI4U\",\"arn\":\"arn:aws:iam::123456789012:role/sample-role\",\"accountId\":\"123456789012\",\"userName\":\"paritosh\"},\"attributes\":{\"creationDate\":\"2022-07-21T14:12:01Z\",\"mfaAuthenticated\":\"false\"}}},\"eventTime\":\"2022-07-21T19:02:56Z\",\"eventSource\":\"dynamodb.amazonaws.com\",\"eventName\":\"RestoreTableToPointInTime\",\"awsRegion\":\"us-east-1\",\"sourceIPAddress\":\"AWS Internal\",\"userAgent\":\"AWS Internal\",\"requestParameters\":{\"sourceTableArn\":\"arn:aws:dynamodb:us-east-1:123456789012:table/sample-table\",\"targetTableName\":\"restored-sample-table\",\"useLatestRestorableTime\":true,\"globalSecondaryIndexOverride\":[],\"localSecondaryIndexOverride\":[],\"sSESpecificationOverride\":{\"enabled\":false}},\"responseElements\":null,\"requestID\":\"STDAOHUR6RNL5LIS81FK9VJFCBVV4KQNSO5AEMVJF66Q9ASUAAJG\",\"eventID\":\"38e10156-d166-4905-ad2e-60995a21c870\",\"readOnly\":false,\"resources\":[{\"accountId\":\"123456789012\",\"type\":\"AWS::DynamoDB::Table\",\"ARN\":\"arn:aws:dynamodb:us-east-1:123456789012:table/sample-table\"},{\"accountId\":\"123456789012\",\"type\":\"AWS::DynamoDB::Table\",\"ARN\":\"arn:aws:dynamodb:us-east-1:123456789012:table/restored-sample-table\"}],\"eventType\":\"AwsApiCall\",\"apiVersion\":\"2012-08-10\",\"managementEvent\":true,\"recipientAccountId\":\"123456789012\",\"eventCategory\":\"Management\",\"sessionCredentialFromConsole\":\"true\"}}",
+        "attributes": {
+            "ApproximateReceiveCount": "1",
+            "SentTimestamp": "1658438957197",
+            "SenderId": "AROAYVA662W2PC57DHWQO:dynamodb-pitr-table-sync-AmazonSQSD-ReplayFunction-197w5YkrGS4k",
+            "ApproximateFirstReceiveTimestamp": "1658439194197"
+        },
+        "messageAttributes": {
+            "sqs-dlq-replay-nb": {
+                "stringValue": "9",
+                "stringListValues": [],
+                "binaryListValues": [],
+                "dataType": "Number"
+            }
+        },
+        "md5OfMessageAttributes": "1383e245f15166e680ffc8bcbb43f327",
+        "md5OfBody": "2b430817586033cb8e6ac34d66831a1f",
+        "eventSource": "aws:sqs",
+        "eventSourceARN": "arn:aws:sqs:us-east-1:123456789012:PITR-Event-Queue",
+        "awsRegion": "us-east-1"
+    }]
+}

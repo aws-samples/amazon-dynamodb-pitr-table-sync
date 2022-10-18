@@ -1,0 +1,251 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  dynamodb-pitr-table-sync
+
+  SAM template for the solution to restore DynamoDB table configuration once it is restored
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 300
+
+Parameters:
+  LambdaFunctionLogLevel:
+    Type: String
+    Default: INFO
+    AllowedValues:
+      - DEBUG
+      - WARN
+      - ERROR
+      - INFO
+    Description: Log level for the lambda function handler. Allowed values are INFO, DEBUG, WARN or ERROR
+  EnableTagSettings:
+    Type: String
+    Default: true
+    Description: String to enable or disable copying tag settings from the source Amazon DynamoDB table to the target Amazon DynamoDB table.
+  EnableKinesisSettings:
+    Type: String
+    Default: true
+    Description: String to enable or disable copying kinesis stream setting from the source Amazon DynamoDB table to the target Amazon DynamoDB table.
+  EnableDynamoDBStreamSettings:
+    Type: String
+    Default: true
+    Description: String to enable or disable copying Amazon DynamoDB stream settings from the source Amazon DynamoDB table to the target Amazon DynamoDB table.
+  EnableDynamoDBLambdaTrigger:
+    Type: String
+    Default: true
+    Description: String to enable to disable copying Amazon DynamoDB AWS Lambda trigger settings from the source Amazon DynamoDB table to the target Amazon DynamoDB table.
+  EnableTTLSettings:
+    Type: String
+    Default: true
+    Description: String to enable or disable copying Time-To-Live (TTL) settings from the source Amazon DynamoDB table to the target Amazon DynamoDB table.
+  EnablePITRSettings:
+    Type: String
+    Default: true
+    Description: String to enable or disable copying Point In Time Restore (PITR) settings from the source Amazon DynamoDB table to the target Amazon DynamoDB table.
+  EnableAutoScalingSettings:
+    Type: String
+    Default: true
+    Description: String to enable or disable copying auto scaling settings from the source Amazon DynamoDB table to the target Amazon DynamoDB table.
+
+Resources:
+  AmazonSQSDLQReplayBackoff:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location:
+        ApplicationId: 'arn:aws:serverlessrepo:eu-west-1:505173050228:applications/amazon-sqs-dlq-replay-backoff'
+        SemanticVersion: 2.0.0
+      Parameters:
+        # An integer that is the multiplier by which the replay interval increases on each attempt
+        # BackoffRate: '2' # Uncomment to override default value
+        # Log level for Lambda function logging, e.g., ERROR, INFO, DEBUG, etc
+        # LogLevel: 'DEBUG' # Uncomment to override default value
+        # An integer, representing the maximum number of replay attempts . If the error recurs more times than specified, retries cease. A value of 0 (zero) is permitted and indicates that the error or errors should never be retried.
+        MaxAttempts: '50' # Uncomment to override default value
+        # The limit of how many bytes that a message can contain before Amazon SQS rejects it, 1024 bytes (1 KiB) to 262144 bytes (256 KiB)
+        # MaximumMessageSize: '262144' # Uncomment to override default value
+        # The number of seconds that Amazon SQS retains a message. You can specify an integer value from 60 seconds (1 minute) to 1209600 seconds (14 days).
+        # MessageRetentionPeriod: '345600' # Uncomment to override default value
+        # The number of times a message is delivered to the source queue before being moved to the dead-letter queue. When the ReceiveCount for a message exceeds the maxReceiveCount for a queue, Amazon SQS moves the message to the dead-letter-queue.
+        # maxReceiveCount: '1' # Uncomment to override default value
+        # The URL of the main queue to which messages will be replayed.
+        MainQueueURL: !Ref DynamoDBPITREventQueue
+        # The Name of the main queue to which messages will be replayed.
+        MainQueueName: !GetAtt DynamoDBPITREventQueue.QueueName
+        # The ARN of the DLQ from which messages will be replayed.
+        DLQArn: !GetAtt DynamoDBPITREventQueueDLQ.Arn
+
+  DynamoDBPITREventQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: PITR-Event-Queue
+      DelaySeconds: 10
+      ReceiveMessageWaitTimeSeconds: 20
+      VisibilityTimeout: 300
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt DynamoDBPITREventQueueDLQ.Arn
+        maxReceiveCount: 1
+
+  DynamoDBPITREventQueueDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: PITR-Event-Queue-DLQ
+      DelaySeconds: 10
+      ReceiveMessageWaitTimeSeconds: 20
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt DynamoDBPITREventQueueSecondaryDLQ.Arn
+        maxReceiveCount: 1
+
+  DynamoDBPITREventQueueSecondaryDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: PITR-Event-Queue-Secondary-DLQ
+      ReceiveMessageWaitTimeSeconds: 20
+
+  DynamoDBTableConfigSync:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src
+      Handler: table_sync/app.lambda_handler
+      Runtime: python3.7
+      Events:
+        DynamoDBPITREventSource:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt DynamoDBPITREventQueue.Arn
+      Environment:
+        Variables:
+          LOG_LEVEL: !Ref LambdaFunctionLogLevel
+          ACCOUNT_ID: !Ref "AWS::AccountId"
+          PARTITION: !Ref "AWS::Partition"
+          ENABLE_TAG_SETTINGS: !Ref EnableTagSettings
+          ENABLE_KINESIS_SETTINGS: !Ref EnableKinesisSettings
+          ENABLE_DYNAMODB_STREAM_SETTINGS: !Ref EnableDynamoDBStreamSettings
+          ENABLE_TTL_SETTINGS: !Ref EnableTTLSettings
+          ENABLE_PITR_SETTINGS: !Ref EnablePITRSettings
+          ENABLE_AUTO_SCALING_SETTINGS: !Ref EnableAutoScalingSettings
+          ENABLE_DYNAMODB_LAMBDA_TRIGGERS: !Ref EnableDynamoDBLambdaTrigger
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - AWSLambdaSQSQueueExecutionRole
+      - Statement:
+          - Sid: AllowCreateChangeSet
+            Effect: Allow
+            Action:
+              - cloudformation:CreateChangeSet
+              - cloudformation:ExecuteChangeSet
+              - cloudformation:DescribeChangeSet
+              - cloudformation:DescribeStacks
+            Resource: '*'
+      - Statement:
+          - Sid: AllowDyanamoDBActions
+            Effect: Allow
+            Action:
+              - dynamodb:DescribeKinesisStreamingDestination
+              - dynamodb:DescribeContinuousBackups
+              - dynamodb:DescribeTimeToLive
+              - dynamodb:DescribeTable
+              - dynamodb:ListTagsOfResource
+              - dynamodb:UpdateContinuousBackups
+              - dynamodb:TagResource
+              - dynamodb:UpdateTimeToLive
+              - dynamodb:EnableKinesisStreamingDestination
+              - dynamodb:UpdateTable
+              - dynamodb:GetShardIterator
+              - dynamodb:DescribeStream
+              - dynamodb:GetRecords
+              - dynamodb:ListStreams
+              - dynamodb:DisableKinesisStreamingDestination
+            Resource: '*'
+      - Statement:
+          - Sid: AllowLambdaActions
+            Effect: Allow
+            Action:
+              - lambda:ListEventSourceMappings
+              - lambda:CreateEventSourceMapping
+              - lambda:GetEventSourceMapping
+            Resource: '*'
+      - Statement:
+          - Sid: AllowKinesisActions
+            Effect: Allow
+            Action:
+              - kinesis:DescribeStream
+              - kinesis:DescribeStreamSummary
+              - kinesis:DescribeStreamConsumer
+              - kinesis:SubscribeToShard
+              - kinesis:RegisterStreamConsumer
+              - kinesis:PutRecord
+              - kinesis:PutRecords
+              - kinesis:ListShards
+            Resource: '*'
+      - Statement:
+          - Sid: AllowApplicationAutoScalingActions
+            Effect: Allow
+            Action:
+              - application-autoscaling:DescribeScalableTargets
+              - application-autoscaling:DescribeScalingPolicies
+              - application-autoscaling:RegisterScalableTarget
+              - application-autoscaling:PutScalingPolicy
+            Resource: '*'
+      - Statement:
+          - Sid: AllowIamPassRoleAction
+            Effect: Allow
+            Action:
+              - iam:PassRole
+            Resource: '*'
+
+  DynamoDBPITRNotificationEvent:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Events rule to capture the DynamoDB PITR table restore
+      EventBusName: default
+      EventPattern:
+        detail-type:
+          - AWS API Call via CloudTrail
+        source:
+          - aws.dynamodb
+        detail:
+          eventName:
+            - RestoreTableToPointInTime
+          errorCode:
+            - exists: false
+      Targets:
+        - Arn: !GetAtt DynamoDBPITREventQueue.Arn
+          Id: SQSQueueWithBackoffEnabled
+
+  MainQueueEventBridgePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: SQS:SendMessage
+            Resource: !GetAtt DynamoDBPITREventQueue.Arn
+      Queues:
+        #- !Select [ 5, !Split [ ':' , !GetAtt AmazonSQSDLQReplayBackoff.Outputs.MainQueueArn ] ]
+        - !GetAtt DynamoDBPITREventQueue.QueueName
+
+Outputs:
+  DynamoDBTableSyncFunction:
+    Description: "Lambda function to sync the config of a restored DynamoDB table."
+    Value: !GetAtt DynamoDBTableConfigSync.Arn
+  DynamoDBTableSyncFunctionIamRole:
+    Description: "Implicit IAM Role created for the DynamoDB restored table sync function"
+    Value: !GetAtt DynamoDBTableConfigSync.Arn
+
+Metadata:
+  AWS::ServerlessRepo::Application:
+    Name: amazon-dynamodb-clone-tables-pitr
+    Description: Cloning DynamoDB Tables with Point-in-Time Recovery (PITR)
+    Author: paritosw
+    SpdxLicenseId: MIT-0
+    LicenseUrl: ./LICENSE
+    ReadmeUrl: ./README.md
+    Labels: [dynamodb, pitr, settings, clone, sync]
+    HomePageUrl: https://gitlab.aws.dev/paritosw/dynamodb-pitr-table-sync
+    SemanticVersion: 1.0.0
+    SourceCodeUrl: https://gitlab.aws.dev/paritosw/dynamodb-pitr-table-sync
