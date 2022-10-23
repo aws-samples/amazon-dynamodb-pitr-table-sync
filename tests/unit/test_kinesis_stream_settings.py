@@ -17,25 +17,30 @@
 import unittest
 from botocore.stub import Stubber
 import boto3
-from src.table_sync import time_to_live_settings
+from src.table_sync import kinesis_stream_settings
 
 
-def test_build_dynamodb_ttl():
+def test_build_dynamodb_auto_scaling():
     dynamodb_client = boto3.client("dynamodb", "us-east-1")
     dynamodb_stubber = Stubber(dynamodb_client)
     dynamodb_stubber.add_response(
-        "describe_time_to_live",
+        "describe_kinesis_streaming_destination",
         {
-            "TimeToLiveDescription": {
-                "TimeToLiveStatus": "ENABLED",
-                "AttributeName": "email",
-            }
+            "TableName": "sample-table",
+            "KinesisDataStreamDestinations": [
+                {
+                    "StreamArn": "arn:aws:kinesis:us-east-1:123456789012:stream/DynamoDB-Test-Stream",
+                    "DestinationStatus": "ACTIVE",
+                }
+            ],
         },
         {"TableName": "source-table"},
     )
     dynamodb_stubber.activate()
-    expected_cfn_resources = {"AttributeName": "email", "Enabled": True}
-    cfn_resources = time_to_live_settings.build_dynamodb_ttl(
+    expected_cfn_resources = {
+        "StreamArn": "arn:aws:kinesis:us-east-1:123456789012:stream/DynamoDB-Test-Stream"
+    }
+    cfn_resources = kinesis_stream_settings.build_kinesis_stream_template(
         dynamodb_client=dynamodb_client, source_table_name="source-table"
     )
     assert cfn_resources.__eq__(expected_cfn_resources)

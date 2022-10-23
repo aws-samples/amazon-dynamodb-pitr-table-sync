@@ -17,25 +17,29 @@
 import unittest
 from botocore.stub import Stubber
 import boto3
-from src.table_sync import time_to_live_settings
+from src.table_sync import pitr_settings
 
 
-def test_build_dynamodb_ttl():
+def test_build_point_in_time_recovery_template():
     dynamodb_client = boto3.client("dynamodb", "us-east-1")
     dynamodb_stubber = Stubber(dynamodb_client)
     dynamodb_stubber.add_response(
-        "describe_time_to_live",
+        "describe_continuous_backups",
         {
-            "TimeToLiveDescription": {
-                "TimeToLiveStatus": "ENABLED",
-                "AttributeName": "email",
+            "ContinuousBackupsDescription": {
+                "ContinuousBackupsStatus": "ENABLED",
+                "PointInTimeRecoveryDescription": {
+                    "PointInTimeRecoveryStatus": "ENABLED",
+                    "EarliestRestorableDateTime": "2022-07-20T14:35:28.111000-04:00",
+                    "LatestRestorableDateTime": "2022-08-24T14:30:28.111000-04:00",
+                },
             }
         },
         {"TableName": "source-table"},
     )
     dynamodb_stubber.activate()
-    expected_cfn_resources = {"AttributeName": "email", "Enabled": True}
-    cfn_resources = time_to_live_settings.build_dynamodb_ttl(
+    expected_cfn_resources = {"PointInTimeRecoveryEnabled": True}
+    cfn_resources = pitr_settings.build_point_in_time_recovery_template(
         dynamodb_client=dynamodb_client, source_table_name="source-table"
     )
     assert cfn_resources.__eq__(expected_cfn_resources)
