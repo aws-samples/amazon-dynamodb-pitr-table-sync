@@ -11,6 +11,7 @@ boto3 = "*"
 mock = "*"
 pyyaml = "*"
 aws-lambda-powertools = "*"
+aws-xray-sdk = "*"
 
 [dev-packages]
 
