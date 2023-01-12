@@ -132,7 +132,6 @@ def lambda_handler(event, context):
     # Update the basic YAML template with a DynamoDB table.
     # Add the table name to the yaml.
     # Add the key schema to the yaml.
-    # Remove the non-key attributes from the AttributeDefinitions
     # Add the attributes to the yaml.
     # Add the billing mode to the yaml.
     source_table = DDB.describe_table(TableName=source_table_name)
@@ -145,18 +144,12 @@ def lambda_handler(event, context):
     )
     dynamodb_table_properties["TableName"] = target_table_name
     dynamodb_table_properties["KeySchema"] = source_table.get("Table").get("KeySchema")
-    key_attribute_names: [str] = []
-    for key in source_table.get("Table").get("KeySchema"):
-        key_attribute_names.append(key.get("AttributeName"))
-    target_table_attribute_definitions = source_table.get("Table").get(
-        "AttributeDefinitions"
-    )
-    for i, attribute in enumerate(target_table_attribute_definitions):
-        if attribute.get("AttributeName") not in key_attribute_names:
-            target_table_attribute_definitions.pop(i)
     dynamodb_table_properties[
         "AttributeDefinitions"
-    ] = target_table_attribute_definitions
+    ] = source_table.get("Table").get(
+        "AttributeDefinitions"
+    )
+    LOG.info(f"These are the attribute definitions before any edits : {dynamodb_table_properties['AttributeDefinitions']}")
     billing_mode_summary = source_table.get("Table").get("BillingModeSummary", None)
     if billing_mode_summary and billing_mode_summary.get("BillingMode", "") == "PAY_PER_REQUEST":
         dynamodb_table_properties["BillingMode"] = "PAY_PER_REQUEST"
@@ -169,6 +162,59 @@ def lambda_handler(event, context):
             .get("ProvisionedThroughput")
             .get("WriteCapacityUnits"),
         }
+
+    # Check if the Global Secondary Indexes Override exist.
+    # If so, add them to the yaml and edit the attribute definitions accordingly.
+    # If not, copy the GSI settings as is.
+    key_schema_attribute_names = []
+    gsi_attribute_names = []
+    lsi_attribute_names = []
+    for schema_item in source_table.get("Table").get("KeySchema"):
+        key_schema_attribute_names.append(schema_item["AttributeName"])
+    if 'global_secondary_index_override' in aws_event_detail.request_parameters.__fields_set__:
+        LOG.info("GSI field set. Copying and then editing per the requirements")
+        dynamodb_table_properties["GlobalSecondaryIndexes"] = \
+            aws_event_detail.request_parameters.global_secondary_index_override
+    else:
+        # Copy the settings as is. No GSI override.
+        LOG.info("GSI field not set. Copying as is.")
+        dynamodb_table_properties["GlobalSecondaryIndexes"] = source_table.get("Table").get("GlobalSecondaryIndexes")
+        for gsi in dynamodb_table_properties["GlobalSecondaryIndexes"]:
+            if "IndexStatus" in gsi: del gsi["IndexStatus"]
+            if "IndexSizeBytes" in gsi: del gsi["IndexSizeBytes"]
+            if "ItemCount" in gsi: del gsi["ItemCount"]
+            if "IndexArn" in gsi: del gsi["IndexArn"]
+            if "NumberOfDecreasesToday" in gsi["ProvisionedThroughput"]: del gsi["ProvisionedThroughput"]["NumberOfDecreasesToday"]
+            if "LastDecreaseDateTime" in gsi["ProvisionedThroughput"]: del gsi["ProvisionedThroughput"]["LastDecreaseDateTime"]
+            if "LastIncreaseDateTime" in gsi["ProvisionedThroughput"]: del gsi["ProvisionedThroughput"]["LastIncreaseDateTime"]
+    for gsi in dynamodb_table_properties["GlobalSecondaryIndexes"]:
+        for key_schema in gsi["KeySchema"]:
+            gsi_attribute_names.append(key_schema["AttributeName"])
+    gsi_attribute_names = list(set(gsi_attribute_names))
+
+    if 'local_secondary_index_override' in aws_event_detail.request_parameters.__fields_set__:
+        # LSI over ride exists.
+        LOG.info("LSI field set. Copying and then editing per the requirements")
+        dynamodb_table_properties["LocalSecondaryIndexes"] = \
+            aws_event_detail.request_parameters.local_secondary_index_override
+    else:
+        # Copy the settings as is. No LSI override.
+        LOG.info("LSI field not set. Copying as is.")
+        dynamodb_table_properties["LocalSecondaryIndexes"] = source_table.get("Table").get("LocalSecondaryIndexes")
+        for lsi in dynamodb_table_properties["LocalSecondaryIndexes"]:
+            if "IndexSizeBytes" in lsi: del lsi["IndexSizeBytes"]
+            if "ItemCount" in lsi: del lsi["ItemCount"]
+            if "IndexArn" in lsi: del lsi["IndexArn"]
+    for lsi in dynamodb_table_properties["LocalSecondaryIndexes"]:
+        for key_schema in lsi["KeySchema"]:
+            lsi_attribute_names.append(key_schema["AttributeName"])
+    lsi_attribute_names = list(set(lsi_attribute_names))
+
+    attribute_names = list(set(key_schema_attribute_names + gsi_attribute_names + lsi_attribute_names))
+    for definition in dynamodb_table_properties["AttributeDefinitions"]:
+        if definition["AttributeName"] not in attribute_names:
+            dynamodb_table_properties["AttributeDefinitions"].remove(definition)
+
     try:
         # Bare minimum template to import the DynamoDB table is now ready.
         # Create and execute the change set.
