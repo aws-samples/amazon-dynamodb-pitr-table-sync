@@ -173,8 +173,14 @@ def lambda_handler(event, context):
         key_schema_attribute_names.append(schema_item["AttributeName"])
     if 'global_secondary_index_override' in aws_event_detail.request_parameters.__fields_set__:
         LOG.info("GSI field set. Copying and then editing per the requirements")
-        dynamodb_table_properties["GlobalSecondaryIndexes"] = \
-            aws_event_detail.request_parameters.global_secondary_index_override
+        dynamodb_table_properties["GlobalSecondaryIndexes"] = []
+        for gsi in aws_event_detail.request_parameters.global_secondary_index_override:
+            gsi_dict = gsi.dict(by_alias=True)
+            gsi_dict["IndexName"] = gsi_dict.pop("indexName")
+            gsi_dict["KeySchema"] = gsi_dict.pop("keySchema")
+            gsi_dict["Projection"] = gsi_dict.pop("projection")
+            gsi_dict["ProvisionedThroughput"] = gsi_dict.pop("provisionedThroughput")
+            dynamodb_table_properties["GlobalSecondaryIndexes"].append(gsi.to_dict())
     else:
         # Copy the settings as is. No GSI override.
         LOG.info("GSI field not set. Copying as is.")
@@ -195,8 +201,9 @@ def lambda_handler(event, context):
     if 'local_secondary_index_override' in aws_event_detail.request_parameters.__fields_set__:
         # LSI over ride exists.
         LOG.info("LSI field set. Copying and then editing per the requirements")
-        dynamodb_table_properties["LocalSecondaryIndexes"] = \
-            aws_event_detail.request_parameters.local_secondary_index_override
+        dynamodb_table_properties["LocalSecondaryIndexes"] = []
+        for lsi in dynamodb_table_properties["LocalSecondaryIndexes"]:
+            dynamodb_table_properties["GlobalSecondaryIndexes"].append(lsi.to_dict())
     else:
         # Copy the settings as is. No LSI override.
         LOG.info("LSI field not set. Copying as is.")
