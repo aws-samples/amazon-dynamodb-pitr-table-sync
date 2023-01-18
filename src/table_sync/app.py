@@ -185,17 +185,22 @@ def lambda_handler(event, context):
         # Copy the settings as is. No GSI override.
         LOG.info("GSI field not set. Copying as is.")
         dynamodb_table_properties["GlobalSecondaryIndexes"] = source_table.get("Table").get("GlobalSecondaryIndexes")
+        if dynamodb_table_properties["GlobalSecondaryIndexes"] is not None:
+            for gsi in dynamodb_table_properties["GlobalSecondaryIndexes"]:
+                if "IndexStatus" in gsi: del gsi["IndexStatus"]
+                if "IndexSizeBytes" in gsi: del gsi["IndexSizeBytes"]
+                if "ItemCount" in gsi: del gsi["ItemCount"]
+                if "IndexArn" in gsi: del gsi["IndexArn"]
+                if "Backfilling" in gsi: del gsi["Backfilling"]
+                if "NumberOfDecreasesToday" in gsi["ProvisionedThroughput"]: del gsi["ProvisionedThroughput"]["NumberOfDecreasesToday"]
+                if "LastDecreaseDateTime" in gsi["ProvisionedThroughput"]: del gsi["ProvisionedThroughput"]["LastDecreaseDateTime"]
+                if "LastIncreaseDateTime" in gsi["ProvisionedThroughput"]: del gsi["ProvisionedThroughput"]["LastIncreaseDateTime"]
+    if dynamodb_table_properties["GlobalSecondaryIndexes"] is not None:
         for gsi in dynamodb_table_properties["GlobalSecondaryIndexes"]:
-            if "IndexStatus" in gsi: del gsi["IndexStatus"]
-            if "IndexSizeBytes" in gsi: del gsi["IndexSizeBytes"]
-            if "ItemCount" in gsi: del gsi["ItemCount"]
-            if "IndexArn" in gsi: del gsi["IndexArn"]
-            if "NumberOfDecreasesToday" in gsi["ProvisionedThroughput"]: del gsi["ProvisionedThroughput"]["NumberOfDecreasesToday"]
-            if "LastDecreaseDateTime" in gsi["ProvisionedThroughput"]: del gsi["ProvisionedThroughput"]["LastDecreaseDateTime"]
-            if "LastIncreaseDateTime" in gsi["ProvisionedThroughput"]: del gsi["ProvisionedThroughput"]["LastIncreaseDateTime"]
-    for gsi in dynamodb_table_properties["GlobalSecondaryIndexes"]:
-        for key_schema in gsi["KeySchema"]:
-            gsi_attribute_names.append(key_schema["AttributeName"])
+            for key_schema in gsi["KeySchema"]:
+                gsi_attribute_names.append(key_schema["AttributeName"])
+    else:
+        del dynamodb_table_properties["GlobalSecondaryIndexes"]
     gsi_attribute_names = list(set(gsi_attribute_names))
 
     if 'local_secondary_index_override' in aws_event_detail.request_parameters.__fields_set__:
@@ -208,13 +213,17 @@ def lambda_handler(event, context):
         # Copy the settings as is. No LSI override.
         LOG.info("LSI field not set. Copying as is.")
         dynamodb_table_properties["LocalSecondaryIndexes"] = source_table.get("Table").get("LocalSecondaryIndexes")
+        if dynamodb_table_properties["LocalSecondaryIndexes"] is not None:
+            for lsi in dynamodb_table_properties["LocalSecondaryIndexes"]:
+                if "IndexSizeBytes" in lsi: del lsi["IndexSizeBytes"]
+                if "ItemCount" in lsi: del lsi["ItemCount"]
+                if "IndexArn" in lsi: del lsi["IndexArn"]
+    if dynamodb_table_properties["LocalSecondaryIndexes"] is not None:
         for lsi in dynamodb_table_properties["LocalSecondaryIndexes"]:
-            if "IndexSizeBytes" in lsi: del lsi["IndexSizeBytes"]
-            if "ItemCount" in lsi: del lsi["ItemCount"]
-            if "IndexArn" in lsi: del lsi["IndexArn"]
-    for lsi in dynamodb_table_properties["LocalSecondaryIndexes"]:
-        for key_schema in lsi["KeySchema"]:
-            lsi_attribute_names.append(key_schema["AttributeName"])
+            for key_schema in lsi["KeySchema"]:
+                lsi_attribute_names.append(key_schema["AttributeName"])
+    else:
+        del dynamodb_table_properties["LocalSecondaryIndexes"]
     lsi_attribute_names = list(set(lsi_attribute_names))
 
     attribute_names = list(set(key_schema_attribute_names + gsi_attribute_names + lsi_attribute_names))
