@@ -44,16 +44,53 @@ class UserIdentity(BaseModel):
         ),
     ) = Field(None, alias="sessionContext")
 
+class SecondaryIndexOverride(BaseModel):
+    index_name: str = Field(None, alias="indexName")
+    key_schema:  List[dict] = Field(None, alias="keySchema")
+    projection: dict = Field(None, alias="projection")
+    provisioned_throughput: Optional[dict] = Field(None, alias="provisionedThroughput")
+    contributor_insights_specification: Optional[dict] = Field(None, alias="contributorInsightsSpecification")
+
+    def to_dict(self):
+        dictionary = {
+            "IndexName": self.index_name,
+            "KeySchema": self.key_schema,
+            "Projection": self.projection,
+            "ProvisionedThroughput": self.provisioned_throughput,
+            "ContributorInsightsSpecification": self.contributor_insights_specification
+        }
+        print(f"This is the dict before anything: {dictionary}")
+        for key in dictionary["KeySchema"]:
+            key["AttributeName"] = key.pop("attributeName")
+            key["KeyType"] = key.pop("keyType")
+
+        if "nonKeyAttributes" in dictionary["Projection"].keys():
+            dictionary["Projection"]["NonKeyAttributes"] = dictionary["Projection"].pop("nonKeyAttributes")
+        if "projectionType" in dictionary["Projection"].keys():
+            dictionary["Projection"]["ProjectionType"] = dictionary["Projection"].pop("projectionType")
+        if 'provisioned_throughput' in self.__fields_set__:
+            dictionary["ProvisionedThroughput"]["ReadCapacityUnits"] = int(dictionary["ProvisionedThroughput"].pop("readCapacityUnits"))
+            dictionary["ProvisionedThroughput"]["WriteCapacityUnits"] = int(dictionary["ProvisionedThroughput"].pop("writeCapacityUnits"))
+        if self.provisioned_throughput is None:
+            del dictionary["ProvisionedThroughput"]
+        if 'contributor_insights_specification' in self.__fields_set__ and self.contributor_insights_specification is not None:
+            if "enabled" in dictionary["ContributorInsightsSpecification"].keys():
+                dictionary["ContributorInsightsSpecification"]["Enabled"] = dictionary["ContributorInsightsSpecification"].pop("enabled")
+        if self.contributor_insights_specification is None:
+            del dictionary["ContributorInsightsSpecification"]
+        return dictionary
+
+
 
 class DynamoDBPitrRequestParameters(BaseModel):
     source_table_arn: Optional[str] = Field(None, alias="sourceTableArn")
     source_table_name: Optional[str] = Field(None, alias="sourceTableName")
     target_table_name: str = Field(None, alias="targetTableName")
     use_latest_restorable_time: bool = Field(None, alias="useLatestRestorableTime")
-    global_secondary_index_override: List[str] = Field(
+    global_secondary_index_override: List[SecondaryIndexOverride] = Field(
         None, alias="globalSecondaryIndexOverride"
     )
-    local_secondary_index_override: List[str] = Field(
+    local_secondary_index_override: List[SecondaryIndexOverride] = Field(
         None, alias="localSecondaryIndexOverride"
     )
     sse_specification_override: create_model(

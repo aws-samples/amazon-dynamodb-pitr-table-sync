@@ -187,6 +187,8 @@ Resources:
               - application-autoscaling:DescribeScalingPolicies
               - application-autoscaling:RegisterScalableTarget
               - application-autoscaling:PutScalingPolicy
+              - application-autoscaling:DeregisterScalableTarget
+              - application-autoscaling:DescribeScheduledActions
             Resource: '*'
       - Statement:
           - Sid: AllowIamPassRoleAction
