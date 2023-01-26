@@ -43,8 +43,18 @@ Commands will do the following:
 
    * **Stack Name**: The name of the stack to deploy to CloudFormation. This should be unique to your account and region, and a good starting point would be something matching your project name.
    * **AWS Region**: The AWS region you want to deploy your app to.
+   * **Parameters for the SAM template**: These are a set of multiple choice decisions that will affect which settings are copied to the new (restored) table.
+     * **LambdaFunctionLogLevel**: Logging level for the lambda function. Allowed values: `INFO`, `WARN`, `DEBUG`, `ERROR`
+     * **EnableTagSettings**: Copy tags from the source table to the target table. Allowed values: `TRUE`, `FALSE`
+     * **EnableKinesisSettings**: Copy Amazon Kinesis settings from the source table to the target table. Allowed values: `TRUE`, `FALSE`
+     * **EnableDynamoDBStreamSettings**: Copy Amazon DynamoDB stream settings from the source table to the target table. Allowed values: `TRUE`, `FALSE`
+     * **EnableDynamoDBLambdaTrigger**: Copy the AWS Lambda trigger from the source table to the target table. Allowed values: `TRUE`, `FALSE`
+     * **EnableTTLSettings**: Copy the TTL(Time-To-Live) settings from the source table to the target table. Allowed values: `TRUE`, `FALSE`
+     * **EnablePITRSettings**: Copy Point-In-Time-Restore (PITR) settings from the source table to the target table. Allowed values: `TRUE`, `FALSE`
+     * **EnableAutoScalingSettings**: Copy the Application Auto Scaling settings from the source table to the target table. Allowed values: `TRUE`, `FALSE`
    * **Confirm changes before deploy**: If set to yes, any change sets will be shown to you before execution for manual review. If set to no, the AWS SAM CLI will automatically deploy application changes.
    * **Allow SAM CLI IAM role creation**: Many AWS SAM templates, including this example, create AWS IAM roles required for the AWS Lambda function(s) included to access AWS services. By default, these are scoped down to minimum required permissions. To deploy an AWS CloudFormation stack which creates or modifies IAM roles, the `CAPABILITY_IAM` value for `capabilities` must be provided. If permission isn't provided through this prompt, to deploy this example you must explicitly pass `--capabilities CAPABILITY_IAM` to the `sam deploy` command.
+   * **Disable Rollback**: If set to yes, rollback will be disabled for the AWS CloudFormation stack that the AWS SAM template will create.
    * **Save arguments to samconfig.toml**: If set to yes, your choices will be saved to a configuration file inside the project, so that in the future you can just re-run `sam deploy` without parameters to deploy changes to your application.
 
 ## Build and test locally
