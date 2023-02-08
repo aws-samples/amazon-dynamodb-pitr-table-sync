@@ -108,7 +108,7 @@ Resources:
     Properties:
       CodeUri: src
       Handler: table_sync/app.lambda_handler
-      Runtime: python3.7
+      Runtime: python3.9
       Events:
         DynamoDBPITREventSource:
           Type: SQS
