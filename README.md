@@ -30,8 +30,8 @@ To use the SAM CLI, you need the following tools.
 To build and deploy your application for the first time, run the following in your shell:
 
 ```bash
-git clone git@ssh.gitlab.aws.dev:paritosw/dynamodb-pitr-table-sync.git
-cd dynamodb-pitr-table-sync
+git clone git@github.com:aws-samples/amazon-dynamodb-pitr-table-sync.git
+cd amazon-dynamodb-pitr-table-sync
 sam build
 sam deploy --guided
 ```
