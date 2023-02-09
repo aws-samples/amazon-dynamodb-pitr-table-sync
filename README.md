@@ -11,7 +11,7 @@ Settings this application will clone:
 6. Time to live (TTL)
 
 Settings this application will NOT clone:
-1. CloudWatch metrics and alarms.
+1. CloudWatch custom metric and alarms (if any).
 2. IAM policies
 
 ## Architecture Diagram
@@ -129,6 +129,10 @@ See the [AWS SAM developer guide](https://docs.aws.amazon.com/serverless-applica
 Next, you can use AWS Serverless Application Repository to deploy ready to use Apps that go beyond hello world samples and learn how authors developed their applications: [AWS Serverless Application Repository main page](https://aws.amazon.com/serverless/serverlessrepo/)
 
 ## Security
+
+Please update [Pydantic](https://pypi.org/project/pydantic/), [boto3](https://pypi.org/project/boto3/), [aws-lambda-powertools](https://pypi.org/project/aws-lambda-powertools/) as and when updates are available.
+
+Alternatively, you can use [pip-audit](https://pypi.org/project/pip-audit/) to detect any vulnerabilities.
 
 See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
 
