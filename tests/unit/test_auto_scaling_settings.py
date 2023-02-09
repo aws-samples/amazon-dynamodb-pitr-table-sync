@@ -1,4 +1,8 @@
-# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# © 2023 Amazon Web Services, Inc. or its affiliates. All Rights Reserved.
+# This AWS Content is provided subject to the terms of the AWS Customer Agreement
+# available at http://aws.amazon.com/agreement or other written agreement between
+# Customer and either Amazon Web Services, Inc. or Amazon Web Services EMEA SARL or both.
+#
 # SPDX-License-Identifier: MIT-0
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this
@@ -18,7 +22,6 @@ import unittest
 from botocore.stub import Stubber
 import boto3
 from src.table_sync import auto_scaling_settings
-import mock
 
 
 def test_build_dynamodb_auto_scaling():
