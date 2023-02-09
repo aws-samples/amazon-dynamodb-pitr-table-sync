@@ -16,4 +16,4 @@ aws-xray-sdk = "*"
 [dev-packages]
 
 [requires]
-python_version = "3.7.13"
+python_version = "3.9.0"
