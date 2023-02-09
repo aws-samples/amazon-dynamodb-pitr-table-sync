@@ -137,9 +137,9 @@ Resources:
               - cloudformation:ExecuteChangeSet
               - cloudformation:DescribeChangeSet
               - cloudformation:DescribeStacks
-            Resource: '*'
+            Resource: arn:aws:cloudformation:${!Ref AWS::Region}:${!Ref AWS::AccountId}:changeSet/*
       - Statement:
-          - Sid: AllowDyanamoDBActions
+          - Sid: AllowDynamoDBActions
             Effect: Allow
             Action:
               - dynamodb:DescribeKinesisStreamingDestination
@@ -157,7 +157,7 @@ Resources:
               - dynamodb:GetRecords
               - dynamodb:ListStreams
               - dynamodb:DisableKinesisStreamingDestination
-            Resource: '*'
+            Resource: arn:aws:dynamodb:${!Ref AWS::Region}:${!Ref AWS::AccountId}:table/*
       - Statement:
           - Sid: AllowLambdaActions
             Effect: Allow
@@ -165,7 +165,7 @@ Resources:
               - lambda:ListEventSourceMappings
               - lambda:CreateEventSourceMapping
               - lambda:GetEventSourceMapping
-            Resource: '*'
+            Resource: arn:aws:lambda:${!Ref AWS::Region}:${!Ref AWS::AccountId}:event-source-mapping:*
       - Statement:
           - Sid: AllowKinesisActions
             Effect: Allow
@@ -178,7 +178,7 @@ Resources:
               - kinesis:PutRecord
               - kinesis:PutRecords
               - kinesis:ListShards
-            Resource: '*'
+            Resource: arn:aws:kinesis:${!Ref AWS::Region}:${!Ref AWS::AccountId}:stream/*
       - Statement:
           - Sid: AllowApplicationAutoScalingActions
             Effect: Allow
