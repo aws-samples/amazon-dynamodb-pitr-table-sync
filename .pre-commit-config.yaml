@@ -1,0 +1,11 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+-   repo: local
+    hooks:
+    -   id: cfn-nag
+        name: CFN_NAG
+        description:  Looks for patterns in CloudFormation templates that may indicate insecure infrastructure.
+        entry: cfn_nag_scan --input-path
+        language: ruby
+        files: template.yaml
