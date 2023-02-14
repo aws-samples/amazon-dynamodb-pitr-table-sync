@@ -2,7 +2,5 @@
 omit =
     # Event structure class definition
     src/model/*
-    # Handler file that calls all the helper functions
-    src/table_sync/app.py
     # Variable declaration
     src/table_sync/config.py
