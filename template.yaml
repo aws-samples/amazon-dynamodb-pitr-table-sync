@@ -137,7 +137,8 @@ Resources:
               - cloudformation:ExecuteChangeSet
               - cloudformation:DescribeChangeSet
               - cloudformation:DescribeStacks
-            Resource: arn:aws:cloudformation:${!Ref AWS::Region}:${!Ref AWS::AccountId}:changeSet/*
+            Resource:
+              - !Sub "arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:changeSet/*"
       - Statement:
           - Sid: AllowDynamoDBActions
             Effect: Allow
@@ -157,7 +158,8 @@ Resources:
               - dynamodb:GetRecords
               - dynamodb:ListStreams
               - dynamodb:DisableKinesisStreamingDestination
-            Resource: arn:aws:dynamodb:${!Ref AWS::Region}:${!Ref AWS::AccountId}:table/*
+            Resource:
+              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/*"
       - Statement:
           - Sid: AllowLambdaActions
             Effect: Allow
@@ -165,7 +167,8 @@ Resources:
               - lambda:ListEventSourceMappings
               - lambda:CreateEventSourceMapping
               - lambda:GetEventSourceMapping
-            Resource: arn:aws:lambda:${!Ref AWS::Region}:${!Ref AWS::AccountId}:event-source-mapping:*
+            Resource:
+              - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:event-source-mapping:*"
       - Statement:
           - Sid: AllowKinesisActions
             Effect: Allow
@@ -178,7 +181,8 @@ Resources:
               - kinesis:PutRecord
               - kinesis:PutRecords
               - kinesis:ListShards
-            Resource: arn:aws:kinesis:${!Ref AWS::Region}:${!Ref AWS::AccountId}:stream/*
+            Resource:
+              - !Sub "arn:aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/*"
       - Statement:
           - Sid: AllowApplicationAutoScalingActions
             Effect: Allow
@@ -195,7 +199,8 @@ Resources:
             Effect: Allow
             Action:
               - iam:PassRole
-            Resource: !Join [ ":", [ 'arn', 'aws', 'iam:', !Ref AWS::AccountId, 'role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com*'] ]
+            Resource:
+              - !Join [ ":", [ "arn", "aws", "iam:", !Ref "AWS::AccountId", "role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com*"] ]
 
   DynamoDBPITRNotificationEvent:
     Type: AWS::Events::Rule
