@@ -109,6 +109,7 @@ Resources:
       CodeUri: src
       Handler: table_sync/app.lambda_handler
       Runtime: python3.9
+      FunctionName: DynamoDB-Table-Sync
       Events:
         DynamoDBPITREventSource:
           Type: SQS
@@ -127,8 +128,26 @@ Resources:
           ENABLE_AUTO_SCALING_SETTINGS: !Ref EnableAutoScalingSettings
           ENABLE_DYNAMODB_LAMBDA_TRIGGERS: !Ref EnableDynamoDBLambdaTrigger
       Policies:
-      - AWSLambdaBasicExecutionRole
-      - AWSLambdaSQSQueueExecutionRole
+      - Statement:
+          - Sid: SQSBasicExecutionRole
+            Effect: Allow
+            Action:
+              - sqs:ReceiveMessage
+              - sqs:DeleteMessage
+              - sqs:GetQueueAttributes
+            Resource:
+              - !GetAtt DynamoDBPITREventQueueDLQ.Arn
+              - !GetAtt DynamoDBPITREventQueueSecondaryDLQ.Arn
+              - !GetAtt DynamoDBPITREventQueue.Arn
+      - Statement:
+          - Sid: DynamoDBTableConfigSyncBasicExecution
+            Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource:
+              - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/DynamoDB-Table-Sync*"
       - Statement:
           - Sid: AllowCreateChangeSet
             Effect: Allow
@@ -139,6 +158,7 @@ Resources:
               - cloudformation:DescribeStacks
             Resource:
               - !Sub "arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:changeSet/*"
+              - !Sub "arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/*"
       - Statement:
           - Sid: AllowDynamoDBActions
             Effect: Allow
@@ -164,11 +184,16 @@ Resources:
           - Sid: AllowLambdaActions
             Effect: Allow
             Action:
-              - lambda:ListEventSourceMappings
-              - lambda:CreateEventSourceMapping
               - lambda:GetEventSourceMapping
             Resource:
               - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:event-source-mapping:*"
+      - Statement:
+          - Sid: AllowEventSourceMappingsActions
+            Effect: Allow
+            Action:
+              - lambda:CreateEventSourceMapping
+              - lambda:ListEventSourceMappings
+            Resource: '*'
       - Statement:
           - Sid: AllowKinesisActions
             Effect: Allow

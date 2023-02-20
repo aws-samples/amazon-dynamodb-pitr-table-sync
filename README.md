@@ -136,6 +136,14 @@ Alternatively, you can use [pip-audit](https://pypi.org/project/pip-audit/) to d
 
 See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
 
+### Permissions spanning across multiple resources
+
+1. The Lambda function execution role has permissions where resources are set to `*` within a specific resource type.
+2. Once a table is restored, Amazon EventBridge sends the name to the lambda function.
+3. The table name the AWS Lambda function receives is updated. This way one functions works for all the tables in the account. Hence, permissions spanning across resources.
+4. The only AWS IAM policy statement with resource `*` is `AllowEventSourceMappingsActions` statement. The actions listed in these statements do not support resource restrictions on the action. Please find more information [here](https://docs.aws.amazon.com/service-authorization/latest/reference/list_awslambda.html#awslambda-actions-as-permissions).
+
+
 ## License
 
 This library is licensed under the MIT-0 License. See the LICENSE file.
