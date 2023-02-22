@@ -1,0 +1,6 @@
+[run]
+omit =
+    # Event structure class definition
+    src/model/*
+    # Variable declaration
+    src/table_sync/config.py
